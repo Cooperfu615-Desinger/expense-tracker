@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+/* Tailwind v4: Theme configuration for Skranji font */
+@theme {
+  --font-skranji: 'Skranji', cursive;
+}
+
+/* Custom font class */
+.font-skranji {
+  font-family: var(--font-skranji);
+}
+
+/* Custom scrollbar styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #ddd;
+  border-radius: 20px;
+}
+
+/* Animate-in utilities for modal */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-in {
+  animation-duration: 200ms;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+}
+
+.fade-in {
+  animation-name: fadeIn;
+}
+
+.zoom-in {
+  animation-name: zoomIn;
+}
+
+/* Selection styles */
+::selection {
+  background: black;
+  color: white;
+}
