@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Expense, StatsView, StatsData } from '../types/expense';
 import { generateId } from '../utils';
 import { STORAGE_KEY } from '../constants/chart';
@@ -18,19 +18,25 @@ export const useExpenses = (): UseExpensesReturn => {
 
     // Load from localStorage on mount
     useEffect(() => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            try {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
                 setExpenses(JSON.parse(saved));
-            } catch (e) {
-                console.error('Failed to parse expenses', e);
             }
+        } catch (e) {
+            // Storage access denied or parsing failed - graceful degradation
+            console.warn('localStorage not available, running in memory-only mode:', e);
         }
     }, []);
 
     // Save to localStorage on change
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+        } catch (e) {
+            // Storage access denied - data won't persist but app continues to work
+            console.warn('Could not save to localStorage:', e);
+        }
     }, [expenses]);
 
     const addExpense = useCallback((expense: Omit<Expense, 'id'>) => {
