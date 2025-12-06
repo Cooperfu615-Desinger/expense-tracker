@@ -29,6 +29,7 @@ function App() {
   // Custom hooks
   const {
     expenses,
+    loading: _loading,
     addExpense,
     deleteExpense,
     clearAllExpenses,
@@ -59,8 +60,8 @@ function App() {
     }
   };
 
-  const handleSaveExpense = (description: string, amount: number, type: 'cash' | 'card') => {
-    addExpense({
+  const handleSaveExpense = async (description: string, amount: number, type: 'cash' | 'card') => {
+    await addExpense({
       date: selectedDate,
       description,
       amount,
@@ -68,10 +69,10 @@ function App() {
     });
   };
 
-  const handleDelete = (id: string, e: React.MouseEvent) => {
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Delete this entry?')) {
-      deleteExpense(id);
+      await deleteExpense(id);
     }
   };
 

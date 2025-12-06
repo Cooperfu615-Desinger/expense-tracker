@@ -5,7 +5,7 @@ import { Modal } from '../ui';
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onClearAll: () => void;
+    onClearAll: () => Promise<void>;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -13,9 +13,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onClose,
     onClearAll,
 }) => {
-    const handleClearAll = () => {
+    const handleClearAll = async () => {
         if (confirm('Are you sure you want to erase all data? This action cannot be undone.')) {
-            onClearAll();
+            await onClearAll();
             onClose();
         }
     };

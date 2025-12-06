@@ -1,14 +1,26 @@
 import { useState, useEffect, useCallback } from 'react';
+import {
+    collection,
+    addDoc,
+    deleteDoc,
+    doc,
+    onSnapshot,
+    query,
+    orderBy,
+    writeBatch,
+} from 'firebase/firestore';
+import { db } from '../utils/firebase';
 import type { Expense, StatsView, StatsData } from '../types/expense';
-import { generateId } from '../utils';
-import { safeLocalStorage } from '../utils/storage';
-import { STORAGE_KEY } from '../constants/chart';
+
+// Firestore collection name
+const EXPENSES_COLLECTION = 'expenses';
 
 interface UseExpensesReturn {
     expenses: Expense[];
-    addExpense: (expense: Omit<Expense, 'id'>) => void;
-    deleteExpense: (id: string) => void;
-    clearAllExpenses: () => void;
+    loading: boolean;
+    addExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
+    deleteExpense: (id: string) => Promise<void>;
+    clearAllExpenses: () => Promise<void>;
     getDailyExpenses: (date: string) => Expense[];
     getDailyTotal: (date: string) => number;
     getStatsData: (date: string, view: StatsView) => StatsData;
@@ -16,39 +28,71 @@ interface UseExpensesReturn {
 
 export const useExpenses = (): UseExpensesReturn => {
     const [expenses, setExpenses] = useState<Expense[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    // Load from localStorage on mount
+    // Subscribe to Firestore expenses collection with real-time updates
     useEffect(() => {
-        const saved = safeLocalStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            try {
-                setExpenses(JSON.parse(saved));
-            } catch (e) {
-                console.warn('Failed to parse saved expenses:', e);
+        const expensesRef = collection(db, EXPENSES_COLLECTION);
+        const q = query(expensesRef, orderBy('date', 'desc'));
+
+        const unsubscribe = onSnapshot(
+            q,
+            (snapshot) => {
+                const expensesData: Expense[] = snapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                } as Expense));
+                setExpenses(expensesData);
+                setLoading(false);
+            },
+            (error) => {
+                console.error('Error fetching expenses:', error);
+                setLoading(false);
             }
+        );
+
+        // Cleanup subscription on unmount
+        return () => unsubscribe();
+    }, []);
+
+    const addExpense = useCallback(async (expense: Omit<Expense, 'id'>) => {
+        try {
+            const expensesRef = collection(db, EXPENSES_COLLECTION);
+            await addDoc(expensesRef, {
+                description: expense.description,
+                amount: expense.amount,
+                date: expense.date,
+                type: expense.type,
+            });
+        } catch (error) {
+            console.error('Error adding expense:', error);
+            throw error;
         }
     }, []);
 
-    // Save to localStorage on change
-    useEffect(() => {
-        safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+    const deleteExpense = useCallback(async (id: string) => {
+        try {
+            const expenseRef = doc(db, EXPENSES_COLLECTION, id);
+            await deleteDoc(expenseRef);
+        } catch (error) {
+            console.error('Error deleting expense:', error);
+            throw error;
+        }
+    }, []);
+
+    const clearAllExpenses = useCallback(async () => {
+        try {
+            const batch = writeBatch(db);
+            expenses.forEach((expense) => {
+                const expenseRef = doc(db, EXPENSES_COLLECTION, expense.id);
+                batch.delete(expenseRef);
+            });
+            await batch.commit();
+        } catch (error) {
+            console.error('Error clearing expenses:', error);
+            throw error;
+        }
     }, [expenses]);
-
-    const addExpense = useCallback((expense: Omit<Expense, 'id'>) => {
-        const newExpense: Expense = {
-            ...expense,
-            id: generateId(),
-        };
-        setExpenses((prev) => [...prev, newExpense]);
-    }, []);
-
-    const deleteExpense = useCallback((id: string) => {
-        setExpenses((prev) => prev.filter((ex) => ex.id !== id));
-    }, []);
-
-    const clearAllExpenses = useCallback(() => {
-        setExpenses([]);
-    }, []);
 
     const getDailyExpenses = useCallback(
         (date: string): Expense[] => {
@@ -144,6 +188,7 @@ export const useExpenses = (): UseExpensesReturn => {
 
     return {
         expenses,
+        loading,
         addExpense,
         deleteExpense,
         clearAllExpenses,
