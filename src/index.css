@@ -1,13 +1,10 @@
-@import "tailwindcss";
-
-/* Tailwind v4: Theme configuration for Skranji font */
-@theme {
-  --font-skranji: 'Skranji', cursive;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Custom font class */
 .font-skranji {
-  font-family: var(--font-skranji);
+  font-family: 'Skranji', cursive;
 }
 
 /* Custom scrollbar styles */
