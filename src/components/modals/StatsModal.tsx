@@ -48,7 +48,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
-                            data={statsData.chartData}
+                            data={statsData.chartData as unknown as Record<string, unknown>[]}
                             cx="50%"
                             cy="50%"
                             innerRadius={50}
